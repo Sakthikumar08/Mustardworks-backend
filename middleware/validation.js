@@ -1,61 +1,60 @@
-const validator = require('validator');
+const { body, validationResult } = require("express-validator")
+const { errorResponse } = require("../utils/helpers")
 
-exports.validateSignup = (req, res, next) => {
-  const { firstName, lastName, email, password, confirmPassword } = req.body;
-  
-  // Check if all fields are provided
-  if (!firstName || !lastName || !email || !password || !confirmPassword) {
-    return res.status(400).json({
-      success: false,
-      message: 'All fields are required'
-    });
+const handleValidationErrors = (req, res, next) => {
+  const errors = validationResult(req)
+  if (!errors.isEmpty()) {
+    const errorMessages = errors.array().map((error) => error.msg)
+    return next(errorResponse(errorMessages.join(". "), 400))
   }
-  
-  // Validate email format
-  if (!validator.isEmail(email)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Please provide a valid email'
-    });
-  }
-  
-  // Validate password length
-  if (password.length < 6) {
-    return res.status(400).json({
-      success: false,
-      message: 'Password must be at least 6 characters'
-    });
-  }
-  
-  // Check if passwords match
-  if (password !== confirmPassword) {
-    return res.status(400).json({
-      success: false,
-      message: 'Passwords do not match'
-    });
-  }
-  
-  next();
-};
+  next()
+}
 
-exports.validateLogin = (req, res, next) => {
-  const { email, password } = req.body;
-  
-  // Check if all fields are provided
-  if (!email || !password) {
-    return res.status(400).json({
-      success: false,
-      message: 'Email and password are required'
-    });
-  }
-  
-  // Validate email format
-  if (!validator.isEmail(email)) {
-    return res.status(400).json({
-      success: false,
-      message: 'Please provide a valid email'
-    });
-  }
-  
-  next();
-};
+exports.validateRegister = [
+  body("firstName")
+    .trim()
+    .notEmpty()
+    .withMessage("First name is required")
+    .isLength({ min: 1, max: 50 })
+    .withMessage("First name must be between 1 and 50 characters")
+    .escape(),
+
+  body("lastName")
+    .trim()
+    .notEmpty()
+    .withMessage("Last name is required")
+    .isLength({ min: 1, max: 50 })
+    .withMessage("Last name must be between 1 and 50 characters")
+    .escape(),
+
+  body("email").trim().isEmail().withMessage("Please provide a valid email").normalizeEmail(),
+
+  body("password").isLength({ min: 6 }).withMessage("Password must be at least 6 characters long"),
+
+  body("confirmPassword")
+    .optional()
+    .custom((value, { req }) => {
+      if (value && value !== req.body.password) {
+        throw new Error("Passwords do not match")
+      }
+      return true
+    }),
+
+  handleValidationErrors,
+]
+
+exports.validateLogin = [
+  body("email").trim().isEmail().withMessage("Please provide a valid email").normalizeEmail(),
+
+  body("password").notEmpty().withMessage("Password is required"),
+
+  handleValidationErrors,
+]
+
+exports.validateUpdatePassword = [
+  body("currentPassword").notEmpty().withMessage("Current password is required"),
+
+  body("newPassword").isLength({ min: 6 }).withMessage("New password must be at least 6 characters long"),
+
+  handleValidationErrors,
+]
