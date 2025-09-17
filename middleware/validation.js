@@ -58,3 +58,47 @@ exports.validateUpdatePassword = [
 
   handleValidationErrors,
 ]
+
+exports.validateProject = [
+  body("projectType")
+    .trim()
+    .notEmpty()
+    .withMessage("Project type is required")
+    .isIn(["hardware", "embedded", "iot", "ev", "ai", "vlsi", "app", "web", "laptop", "other"])
+    .withMessage("Invalid project type"),
+
+  body("budget")
+    .optional()
+    .trim()
+    .isIn(["<1000", "1000-5000", "5000-10000", "10000-25000", ">25000", ""])
+    .withMessage("Invalid budget range"),
+
+  body("timeline")
+    .optional()
+    .trim()
+    .isIn(["<1month", "1-3months", "3-6months", "6-12months", ">12months", ""])
+    .withMessage("Invalid timeline"),
+
+  body("description")
+    .trim()
+    .notEmpty()
+    .withMessage("Description is required")
+    .isLength({ min: 10, max: 2000 })
+    .withMessage("Description must be between 10 and 2000 characters")
+    .escape(),
+
+  handleValidationErrors,
+]
+
+exports.validateProjectStatus = [
+  body("status")
+    .trim()
+    .notEmpty()
+    .withMessage("Status is required")
+    .isIn(["pending", "in-review", "approved", "rejected", "in-progress", "completed"])
+    .withMessage("Invalid status value"),
+
+  handleValidationErrors,
+]
+
+exports.handleValidationErrors = handleValidationErrors

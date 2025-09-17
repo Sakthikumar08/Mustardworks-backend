@@ -15,6 +15,7 @@ connectDB()
 
 // Route files
 const auth = require("./routes/auth")
+const projects = require("./routes/projects")
 
 const app = express()
 
@@ -56,6 +57,7 @@ app.use(
 
 // Mount routers
 app.use("/api/auth", auth)
+app.use("/api/projects", projects)
 
 // Basic route
 app.get("/", (req, res) => {
@@ -65,23 +67,16 @@ app.get("/", (req, res) => {
   })
 })
 
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack)
-
-  res.status(err.statusCode || 500).json({
-    status: "error",
-    message: err.message || "Something went wrong!",
-  })
-})
-
 // Handle undefined routes
-app.all("*", (req, res) => {
-  res.status(404).json({
-    status: "error",
-    message: `Route ${req.originalUrl} not found`,
-  })
+app.all("*", (req, res, next) => {
+  const err = new Error(`Route ${req.originalUrl} not found`)
+  err.statusCode = 404
+  next(err)
 })
+
+// Global error handler
+const globalErrorHandler = require("./middleware/errorHandler")
+app.use(globalErrorHandler)
 
 const PORT = process.env.PORT || 5000
 

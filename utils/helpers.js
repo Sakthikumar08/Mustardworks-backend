@@ -4,13 +4,37 @@ const catchAsync = (fn) => {
   }
 }
 
+const successResponse = (res, statusCode, message, data = null) => {
+  const response = {
+    success: true,
+    message,
+  }
+
+  if (data) {
+    response.data = data
+  }
+
+  return res.status(statusCode).json(response)
+}
+
+class AppError extends Error {
+  constructor(message, statusCode) {
+    super(message)
+    this.statusCode = statusCode
+    this.status = `${statusCode}`.startsWith("4") ? "fail" : "error"
+    this.isOperational = true
+
+    Error.captureStackTrace(this, this.constructor)
+  }
+}
+
 const errorResponse = (message, statusCode) => {
-  const error = new Error(message)
-  error.statusCode = statusCode
-  return error
+  return new AppError(message, statusCode)
 }
 
 module.exports = {
   catchAsync,
   errorResponse,
+  successResponse,
+  AppError,
 }

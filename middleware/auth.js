@@ -1,6 +1,6 @@
 const { verifyToken } = require("../config/jwt")
 const User = require("../models/User")
-const { catchAsync, errorResponse } = require("../utils/helpers")
+const { catchAsync } = require("../utils/helpers")
 
 exports.protect = catchAsync(async (req, res, next) => {
   let token
@@ -11,31 +11,50 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
 
   if (!token) {
-    return next(errorResponse("You are not logged in! Please log in to get access.", 401))
+    return res.status(401).json({
+      success: false,
+      message: "You are not logged in! Please log in to get access.",
+    })
   }
 
-  // Verify token
-  const decoded = verifyToken(token)
+  try {
+    // Verify token
+    const decoded = verifyToken(token)
 
-  // Check if user still exists
-  const currentUser = await User.findById(decoded.id)
-  if (!currentUser) {
-    return next(errorResponse("The user belonging to this token no longer exists.", 401))
+    // Check if user still exists
+    const currentUser = await User.findById(decoded.id)
+    if (!currentUser) {
+      return res.status(401).json({
+        success: false,
+        message: "The user belonging to this token no longer exists.",
+      })
+    }
+
+    // Check if user changed password after the token was issued
+    if (currentUser.changedPasswordAfter(decoded.iat)) {
+      return res.status(401).json({
+        success: false,
+        message: "User recently changed password! Please log in again.",
+      })
+    }
+
+    req.user = currentUser
+    next()
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid token. Please log in again.",
+    })
   }
-
-  // Check if user changed password after the token was issued
-  if (currentUser.changedPasswordAfter(decoded.iat)) {
-    return next(errorResponse("User recently changed password! Please log in again.", 401))
-  }
-
-  req.user = currentUser
-  next()
 })
 
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
-      return next(errorResponse("You do not have permission to perform this action", 403))
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to perform this action",
+      })
     }
     next()
   }

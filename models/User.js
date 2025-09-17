@@ -43,6 +43,13 @@ const userSchema = new mongoose.Schema({
   },
 })
 
+userSchema.virtual("name").get(function () {
+  return `${this.firstName} ${this.lastName}`
+})
+
+userSchema.set("toJSON", { virtuals: true })
+userSchema.set("toObject", { virtuals: true })
+
 // Encrypt password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next()
