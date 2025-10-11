@@ -2,36 +2,6 @@ const User = require("../models/User")
 const { generateToken } = require("../config/jwt")
 const { catchAsync, errorResponse } = require("../utils/helpers")
 
-const createSendToken = (user, statusCode, res, rememberMe = false) => {
-  const token = generateToken(user._id)
-
-  // Calculate cookie expiration
-  const cookieExpire = rememberMe ? 30 : Number.parseInt(process.env.JWT_COOKIE_EXPIRE) || 7 // 30 days if remember me, otherwise use env var
-
-  const cookieOptions = {
-    expires: new Date(Date.now() + cookieExpire * 24 * 60 * 60 * 1000),
-    httpOnly: true,
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    cookieOptions.secure = true
-  }
-
-  res.cookie("jwt", token, cookieOptions)
-
-  // Remove password from output
-  user.password = undefined
-  user.passwordChangedAt = undefined
-
-  res.status(statusCode).json({
-    status: "success",
-    data: {
-      user,
-    },
-  })
-}
-
 // Register a new user
 exports.register = catchAsync(async (req, res, next) => {
   const { firstName, lastName, email, password, confirmPassword } = req.body
@@ -54,8 +24,28 @@ exports.register = catchAsync(async (req, res, next) => {
     password,
   })
 
-  // Auto-login on successful registration
-  createSendToken(user, 201, res)
+  // Generate token
+  const token = generateToken(user._id)
+
+  // Remove password from output
+  user.password = undefined
+
+  // Send token in response body
+  res.status(201).json({
+    success: true,
+    token,
+    data: {
+      user: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+      },
+    },
+    message: "User registered successfully",
+  })
 })
 
 // Admin-only login endpoint
@@ -194,7 +184,7 @@ exports.adminRegister = async (req, res) => {
   }
 }
 
-// In your login function in authController.js
+// Login user
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body
@@ -280,8 +270,28 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   user.password = newPassword
   await user.save()
 
-  // Log user in with new password (send new JWT)
-  createSendToken(user, 200, res)
+  // Generate new token
+  const token = generateToken(user._id)
+
+  // Remove password from output
+  user.password = undefined
+
+  // Send new token in response
+  res.status(200).json({
+    success: true,
+    token,
+    data: {
+      user: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+      },
+    },
+    message: "Password updated successfully",
+  })
 })
 
 module.exports = {
