@@ -237,20 +237,28 @@ exports.logout = (req, res) => {
   })
 
   res.status(200).json({
-    status: "success",
+    success: true, // Changed to consistent format
     message: "Logged out successfully",
   })
 }
 
-// Get current user
+// Get current user - FIXED
 exports.getMe = catchAsync(async (req, res, next) => {
   const user = await User.findById(req.user._id)
 
   res.status(200).json({
-    status: "success",
+    success: true, // Changed from status: "success"
     data: {
-      user,
+      user: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+      },
     },
+    message: "User retrieved successfully",
   })
 })
 
