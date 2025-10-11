@@ -2,11 +2,12 @@ const { verifyToken } = require("../config/jwt")
 const User = require("../models/User")
 const { catchAsync } = require("../utils/helpers")
 
-exports.protect = catchAsync(async (req, res, next) => {
+const protect = catchAsync(async (req, res, next) => {
   let token
 
-  // Check if token exists in cookies
-  if (req.cookies.jwt) {
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+    token = req.headers.authorization.split(" ")[1]
+  } else if (req.cookies.jwt) {
     token = req.cookies.jwt
   }
 
@@ -30,8 +31,13 @@ exports.protect = catchAsync(async (req, res, next) => {
       })
     }
 
+    console.log("[v0] Token decoded:", { id: decoded.id, iat: decoded.iat })
+    console.log("[v0] User found:", { id: currentUser._id, email: currentUser.email, role: currentUser.role })
+    console.log("[v0] Password changed at:", currentUser.passwordChangedAt)
+
     // Check if user changed password after the token was issued
     if (currentUser.changedPasswordAfter(decoded.iat)) {
+      console.log("[v0] Password was changed after token was issued")
       return res.status(401).json({
         success: false,
         message: "User recently changed password! Please log in again.",
@@ -41,6 +47,7 @@ exports.protect = catchAsync(async (req, res, next) => {
     req.user = currentUser
     next()
   } catch (error) {
+    console.log("[v0] Token verification error:", error.message)
     return res.status(401).json({
       success: false,
       message: "Invalid token. Please log in again.",
@@ -48,7 +55,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   }
 })
 
-exports.restrictTo = (...roles) => {
+const restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({
@@ -58,4 +65,12 @@ exports.restrictTo = (...roles) => {
     }
     next()
   }
+}
+
+const adminOnly = restrictTo("admin")
+
+module.exports = {
+  protect,
+  restrictTo,
+  adminOnly,
 }

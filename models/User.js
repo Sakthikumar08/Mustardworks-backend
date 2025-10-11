@@ -57,8 +57,7 @@ userSchema.pre("save", async function (next) {
   const saltRounds = Number.parseInt(process.env.BCRYPT_SALT_ROUNDS) || 12
   this.password = await bcrypt.hash(this.password, saltRounds)
 
-  // Update passwordChangedAt if password was modified (but not on new user creation)
-  if (!this.isNew) {
+  if (!this.isNew && this.isModified("password")) {
     this.passwordChangedAt = Date.now() - 1000 // Subtract 1 second to ensure token is created after password change
   }
 
@@ -72,7 +71,7 @@ userSchema.methods.correctPassword = async (candidatePassword, userPassword) =>
 userSchema.methods.changedPasswordAfter = function (JWTTimestamp) {
   if (this.passwordChangedAt) {
     const changedTimestamp = Number.parseInt(this.passwordChangedAt.getTime() / 1000, 10)
-    return JWTTimestamp < changedTimestamp
+    return JWTTimestamp < changedTimestamp - 1
   }
   return false
 }
