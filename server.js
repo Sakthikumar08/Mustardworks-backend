@@ -47,15 +47,10 @@ app.use(express.urlencoded({ extended: true }))
 // Cookie parser middleware
 app.use(cookieParser())
 
-// Enable CORS with credentials
-const allowedOrigins = [
-  process.env.FRONTEND_URL, // explicit frontend if configured
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "https://localhost:3000",
-  /\.vercel\.app$/, // deploy previews and production on Vercel
-  /\.v0\.app$/, // v0 preview domains
-]
+app.use(cors({
+  origin: "*",
+  credentials: true
+}));
 
 const corsOptions = {
   origin: (origin, callback) => {
