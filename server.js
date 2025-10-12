@@ -47,35 +47,11 @@ app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
 
 // CORS configuration - FIXED
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "https://www.mustardworks.in",
-  "https://mustardworks.in"
-]
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, postman)
-    if (!origin) return callback(null, true)
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true)
-    } else {
-      callback(new Error(`Not allowed by CORS: ${origin}`))
-    }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
-  optionsSuccessStatus: 200
-}
-
-// Apply CORS middleware
-app.use(cors(corsOptions))
-
-// Handle preflight requests
-app.options("*", cors(corsOptions))
+// TEMPORARY FIX - Allow all origins
+app.use(cors({
+  origin: true, // This allows ANY origin
+  credentials: true
+}));
 
 // Mount routers
 app.use("/api/auth", auth)
@@ -114,7 +90,7 @@ const PORT = process.env.PORT || 5000
 
 const server = app.listen(PORT, () => {
   console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
-  console.log(`Allowed origins: ${allowedOrigins.join(", ")}`)
+ // console.log(`Allowed origins: ${allowedOrigins.join(", ")}`)
 })
 
 // Handle unhandled promise rejections
