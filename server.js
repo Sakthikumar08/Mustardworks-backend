@@ -48,8 +48,8 @@ app.use(cookieParser())
 
 // CORS configuration
 const allowedOrigins = process.env.FRONTEND_URL 
-  ? process.env.FRONTEND_URL.split(',')
-  : ['http://localhost:5173', 'http://localhost:5174','https://www.mustardworks.in/','https://mustardworks.in'];
+  ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+  : ['http://localhost:5173', 'http://localhost:5174', 'https://www.mustardworks.in', 'https://mustardworks.in', 'https://mustardwork-admin.vercel.app'];
 
 app.use(cors({
   origin: function (origin, callback) {
