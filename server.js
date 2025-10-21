@@ -49,7 +49,14 @@ app.use(cookieParser())
 // CORS configuration
 const allowedOrigins = process.env.FRONTEND_URL 
   ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
-  : ['http://localhost:5173', 'http://localhost:5174', 'https://www.mustardworks.in', 'https://mustardworks.in','https://mustardwork.vercel.app', 'https://mustardwork-admin.vercel.app'];
+  : [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'https://www.mustardworks.in',
+      'https://mustardworks.in',
+      'https://mustardwork.vercel.app',
+      'https://mustardwork-admin.vercel.app'
+    ];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -57,16 +64,18 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log(`✅ CORS allowed origin: ${origin}`);
       callback(null, true);
     } else {
-      console.log(`CORS blocked origin: ${origin}`);
-      console.log(`Allowed origins: ${allowedOrigins.join(', ')}`);
+      console.log(`❌ CORS blocked origin: ${origin}`);
+      console.log(`📋 Allowed origins: ${allowedOrigins.join(', ')}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Set-Cookie']
 }));
 
 // Mount routers
