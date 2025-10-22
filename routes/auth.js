@@ -7,9 +7,10 @@ const {
   updatePassword,
   adminLogin,
   adminRegister,
+  getAllUsers,
 } = require("../controllers/authController")
 const { validateRegister, validateLogin, validateUpdatePassword } = require("../middleware/validation")
-const { protect } = require("../middleware/auth")
+const { protect, restrictTo } = require("../middleware/auth")
 
 const router = express.Router()
 
@@ -23,5 +24,8 @@ router.post("/logout", logout)
 // Protected routes
 router.get("/me", protect, getMe)
 router.patch("/update-password", protect, validateUpdatePassword, updatePassword)
+
+// Admin only routes
+router.get("/users", protect, restrictTo("admin"), getAllUsers)
 
 module.exports = router

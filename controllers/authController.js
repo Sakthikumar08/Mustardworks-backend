@@ -302,6 +302,47 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   })
 })
 
+// Get all users (admin only)
+exports.getAllUsers = catchAsync(async (req, res, next) => {
+  const { page = 1, limit = 10, role, sortBy = "createdAt", sortOrder = "desc" } = req.query
+
+  // Build filter object
+  const filter = {}
+  if (role) filter.role = role
+
+  // Build sort object
+  const sort = {}
+  sort[sortBy] = sortOrder === "desc" ? -1 : 1
+
+  // Calculate pagination
+  const skip = (Number.parseInt(page) - 1) * Number.parseInt(limit)
+
+  const users = await User.find(filter)
+    .sort(sort)
+    .skip(skip)
+    .limit(Number.parseInt(limit))
+    .select("-password -__v")
+
+  // Get total count for pagination
+  const totalUsers = await User.countDocuments(filter)
+  const totalPages = Math.ceil(totalUsers / Number.parseInt(limit))
+
+  res.status(200).json({
+    success: true,
+    data: {
+      users,
+      pagination: {
+        currentPage: Number.parseInt(page),
+        totalPages,
+        totalUsers,
+        hasNextPage: Number.parseInt(page) < totalPages,
+        hasPrevPage: Number.parseInt(page) > 1,
+      },
+    },
+    message: "Users retrieved successfully",
+  })
+})
+
 module.exports = {
   register: exports.register,
   login: exports.login,
@@ -310,4 +351,5 @@ module.exports = {
   logout: exports.logout,
   getMe: exports.getMe,
   updatePassword: exports.updatePassword,
+  getAllUsers: exports.getAllUsers,
 }
