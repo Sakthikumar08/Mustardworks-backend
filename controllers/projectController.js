@@ -1,5 +1,15 @@
 const Project = require("../models/Project")
 const { errorResponse, successResponse, catchAsync } = require("../utils/helpers")
+const nodemailer = require("nodemailer")
+
+// Configure email transporter
+const transporter = nodemailer.createTransporter({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER , // Your website's email
+    pass: process.env.EMAIL_PASS  // Your app password
+  }
+})
 
 // Create a new project submission (requires authentication)
 exports.createProject = catchAsync(async (req, res, next) => {
@@ -21,6 +31,35 @@ exports.createProject = catchAsync(async (req, res, next) => {
 
   await project.save()
 
+  // Send email notification FROM website TO admin
+  try {
+    const mailOptions = {
+      from: process.env.EMAIL_USER, // From your website email
+      to: 'mustardworks25@gmail.com', // To admin
+      subject: 'New Project Submission Notification',
+      text: `A new project has been submitted on your website.
+
+User Details:
+Name: ${user.name}
+Email: ${user.email}
+
+Project Details:
+Type: ${projectType}
+Budget: $${budget}
+Timeline: ${timeline} days
+Description: ${description}
+
+Submitted at: ${new Date().toLocaleString()}
+
+Please check the admin panel for more details.`
+    }
+
+    await transporter.sendMail(mailOptions)
+    console.log('Project submission notification sent to admin')
+  } catch (emailError) {
+    console.error('Failed to send notification email:', emailError)
+  }
+
   successResponse(res, 201, "Project submitted successfully", {
     project: {
       id: project._id,
@@ -36,25 +75,21 @@ exports.createProject = catchAsync(async (req, res, next) => {
   })
 })
 
-// Get all project submissions (admin only)
+// ... rest of your existing controller methods remain exactly the same
 exports.getAllProjects = catchAsync(async (req, res, next) => {
   const { page = 1, limit = 10, status, projectType, sortBy = "submittedAt", sortOrder = "desc" } = req.query
 
-  // Build filter object
   const filter = {}
   if (status) filter.status = status
   if (projectType) filter.projectType = projectType
 
-  // Build sort object
   const sort = {}
   sort[sortBy] = sortOrder === "desc" ? -1 : 1
 
-  // Calculate pagination
   const skip = (Number.parseInt(page) - 1) * Number.parseInt(limit)
 
   const projects = await Project.find(filter).sort(sort).skip(skip).limit(Number.parseInt(limit)).select("-__v")
 
-  // Get total count for pagination
   const totalProjects = await Project.countDocuments(filter)
   const totalPages = Math.ceil(totalProjects / Number.parseInt(limit))
 
@@ -73,21 +108,16 @@ exports.getAllProjects = catchAsync(async (req, res, next) => {
 exports.getMyProjects = catchAsync(async (req, res, next) => {
   const { page = 1, limit = 10, status, sortBy = "submittedAt", sortOrder = "desc" } = req.query
 
-  // Build filter object for current user's projects
   const filter = { user: req.user._id }
   if (status) filter.status = status
 
-  // Build sort object
   const sort = {}
   sort[sortBy] = sortOrder === "desc" ? -1 : 1
 
-  // Calculate pagination
   const skip = (Number.parseInt(page) - 1) * Number.parseInt(limit)
 
-  // Get user's projects with pagination
   const projects = await Project.find(filter).sort(sort).skip(skip).limit(Number.parseInt(limit)).select("-__v")
 
-  // Get total count for pagination
   const totalProjects = await Project.countDocuments(filter)
   const totalPages = Math.ceil(totalProjects / Number.parseInt(limit))
 
@@ -103,7 +133,6 @@ exports.getMyProjects = catchAsync(async (req, res, next) => {
   })
 })
 
-// Get a single project by ID
 exports.getProjectById = catchAsync(async (req, res, next) => {
   const { id } = req.params
 
@@ -120,7 +149,6 @@ exports.getProjectById = catchAsync(async (req, res, next) => {
   successResponse(res, 200, "Project retrieved successfully", { project })
 })
 
-// Update project status (admin only)
 exports.updateProjectStatus = catchAsync(async (req, res, next) => {
   const { id } = req.params
   const { status } = req.body
@@ -144,7 +172,6 @@ exports.updateProjectStatus = catchAsync(async (req, res, next) => {
   successResponse(res, 200, "Project status updated successfully", { project })
 })
 
-// Delete a project (admin only)
 exports.deleteProject = catchAsync(async (req, res, next) => {
   const { id } = req.params
 

@@ -11,7 +11,17 @@
     "migrate:projects": "node scripts/migrateProjects.js",
     "test": "echo \"No tests configured\" && exit 0"
   },
-  "keywords": ["nodejs", "express", "mongodb", "mongoose", "authentication", "jwt", "api", "gallery", "backend"],
+  "keywords": [
+    "nodejs",
+    "express",
+    "mongodb",
+    "mongoose",
+    "authentication",
+    "jwt",
+    "api",
+    "gallery",
+    "backend"
+  ],
   "author": "MustardWorks",
   "license": "MIT",
   "engines": {
@@ -29,6 +39,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.8.0",
     "morgan": "^1.10.0",
+    "nodemailer": "^7.0.9",
     "validator": "^13.11.0"
   },
   "devDependencies": {
